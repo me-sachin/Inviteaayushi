@@ -28,7 +28,7 @@
   }
 
   *{box-sizing:border-box;}
-  html{scroll-behavior:auto;}
+  html{scroll-behavior:smooth;}
   body{
     margin:0;
     background:
@@ -366,45 +366,6 @@
     .ceremony-title{font-size:52px;}
     .cd-box{width:58px;}
   }
-
-  /* ---------- floating music toggle ---------- */
-  .music-toggle{
-    position:fixed;
-    top:18px;
-    right:18px;
-    z-index:1000;
-    width:46px;
-    height:46px;
-    border:1px solid rgba(192,138,46,.65);
-    border-radius:50%;
-    background:rgba(255,249,241,.92);
-    color:#8C3B4C;
-    box-shadow:0 5px 18px rgba(74,42,30,.18);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    -webkit-tap-highlight-color:transparent;
-    backdrop-filter:blur(7px);
-    transition:transform .2s ease, box-shadow .2s ease;
-  }
-  .music-toggle:hover{
-    transform:scale(1.06);
-    box-shadow:0 7px 22px rgba(74,42,30,.24);
-  }
-  .music-toggle:active{transform:scale(.94);}
-  .music-toggle svg{width:22px;height:22px;display:block;}
-  .music-toggle .icon-off{display:none;}
-  .music-toggle.is-off .icon-on{display:none;}
-  .music-toggle.is-off .icon-off{display:block;}
-  @media(max-width:600px){
-    .music-toggle{top:12px;right:12px;width:42px;height:42px;}
-  }
-
-
-  /* Lightweight / older-phone compatibility */
-  @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
-  @media (max-width:380px){ .frame{padding-left:14px;padding-right:14px;} section{padding-top:48px;} }
 </style>
 </head>
 <body>
@@ -582,92 +543,49 @@
 </div>
 
 
-<!-- Background flute music -->
-<button class="music-toggle" id="musicToggle" type="button"
-        aria-label="Pause music" title="Pause music">
-  <span class="icon-on" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-         stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 18V5l10-2v13"/>
-      <circle cx="6" cy="18" r="3"/>
-      <circle cx="16" cy="16" r="3"/>
-    </svg>
-  </span>
-  <span class="icon-off" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-         stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 18V5l10-2v13"/>
-      <circle cx="6" cy="18" r="3"/>
-      <circle cx="16" cy="16" r="3"/>
-      <path d="M4 4l16 16"/>
-    </svg>
-  </span>
-</button>
-
-<audio id="fluteMusic" preload="auto" loop playsinline><source src="flute.mp3" type="audio/mpeg"></audio>
+<!-- Background flute music - always on, no music control -->
+<audio id="fluteMusic" autoplay loop preload="auto" playsinline>
+  <source src="flute.mp3" type="audio/mpeg">
+</audio>
 
 <script>
 
-  // Background flute music — ON by default, looping.
+  // Background flute music — always on, looping, with no visible control.
   const music = document.getElementById('fluteMusic');
-  const musicToggle = document.getElementById('musicToggle');
 
-  function playMusic(){
-    if (!music) return;
-    music.muted = false;
-    music.volume = 1.0;
-    const p = music.play();
-    if (p && p.catch) p.catch(() => {});
-  }
-
-  function pauseMusic(){
-    if (!music) return;
-    music.pause();
-  }
-
-  // Try to start immediately.
-  document.addEventListener('DOMContentLoaded', playMusic);
-  window.addEventListener('load', playMusic);
-
-  // Older phones often block audible autoplay. Start on the first user gesture.
-  function firstGesture(){ playMusic(); }
-  document.addEventListener('touchstart', firstGesture, false);
-  document.addEventListener('click', firstGesture, false);
-  document.addEventListener('keydown', firstGesture, false);
-
-  // Top-right music icon: tap to stop, tap again to play.
-  musicToggle.addEventListener('click', (event) => {
-    event.stopPropagation();
-
-    if (music.paused) {
-      playMusic();
-      musicToggle.classList.remove('is-off');
-      musicToggle.setAttribute('aria-label','Pause music');
-      musicToggle.setAttribute('title','Pause music');
-    } else {
-      pauseMusic();
-      musicToggle.classList.add('is-off');
-      musicToggle.setAttribute('aria-label','Play music');
-      musicToggle.setAttribute('title','Play music');
+  async function startMusic(){
+    try{
+      music.muted = false;
+      await music.play();
+    }catch(err){
+      // Some browsers block audible autoplay. Start automatically on the
+      // first user interaction, then keep the music looping.
     }
-  });
+  }
 
-  // Old-device friendly reveal: no IntersectionObserver required.
+  document.addEventListener('DOMContentLoaded', startMusic);
+
+  // Required fallback for browsers that block sound before interaction.
+  const startOnInteraction = ()=>{
+    startMusic();
+    document.removeEventListener('pointerdown', startOnInteraction);
+    document.removeEventListener('touchstart', startOnInteraction);
+    document.removeEventListener('keydown', startOnInteraction);
+  };
+  document.addEventListener('pointerdown', startOnInteraction, {once:true});
+  document.addEventListener('touchstart', startOnInteraction, {once:true});
+  document.addEventListener('keydown', startOnInteraction, {once:true});
+
+  // reveal on scroll
   const els = document.querySelectorAll('.reveal');
-  function revealVisible(){
-    for (let i=0; i<els.length; i++) {
-      const r = els[i].getBoundingClientRect();
-      if (r.top < (window.innerHeight || document.documentElement.clientHeight) * 0.92) {
-        els[i].classList.add('in');
-      }
-    }
-  }
-  revealVisible();
-  window.addEventListener('scroll', revealVisible, false);
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); });
+  }, {threshold:0.2});
+  els.forEach(el=>io.observe(el));
 
   // petals
   const petalWrap = document.getElementById('petals');
-  const N = 8;
+  const N = 18;
   for(let i=0;i<N;i++){
     const p = document.createElement('div');
     p.className = 'petal';
