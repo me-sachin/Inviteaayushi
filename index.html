@@ -406,22 +406,14 @@
 
 <style id="oldDeviceMusicCSS">
 #musicControl{
-  position:fixed;
-  top:14px;
-  right:14px;
-  z-index:99999;
-  padding:11px 15px;
-  border:1px solid #d8b36a;
-  border-radius:22px;
-  background:#5a1528;
-  color:#f7dfab;
-  font-family:Arial,sans-serif;
-  font-size:14px;
-  font-weight:bold;
-  line-height:1.2;
-  box-shadow:0 2px 6px rgba(0,0,0,.25);
-  cursor:pointer;
+  position:fixed;top:18px;right:18px;z-index:999999;
+  padding:10px 18px;border:2px solid #C08A2E;border-radius:24px;
+  background:rgba(140,59,76,.96);color:#fff;font-family:inherit;
+  font-size:15px;font-weight:700;line-height:1.2;cursor:pointer;
+  box-shadow:0 3px 10px rgba(0,0,0,.28);-webkit-appearance:none;appearance:none;
 }
+#musicControl:active{transform:scale(.96);}
+@media(max-width:600px){#musicControl{top:10px;right:10px;padding:9px 14px;font-size:14px;}}
 #musicControl:active{opacity:.75;}
 #fluteMusic{display:none;}
 </style>
@@ -638,10 +630,7 @@
 
 
 <!-- Music control -->
-<button id="musicControl" type="button" aria-label="Stop Music" title="Stop Music">
-  <span id="musicIcon" aria-hidden="true">🔊</span>
-  <span id="musicText">Stop Music</span>
-</button>
+<button id="musicControl" type="button" aria-label="Start Music" title="Start Music">Start Music</button>
 
 <!-- Background flute music -->
 
@@ -667,14 +656,14 @@
 
   function setPlaying(){
     playing=true;
-    if(icon) icon.innerHTML="🔊";
+    if(icon) icon.innerHTML="Start Music";
     if(text) text.innerHTML="Stop Music";
     button.setAttribute("aria-label","Stop Music");
     button.setAttribute("title","Stop Music");
   }
   function setStopped(){
     playing=false;
-    if(icon) icon.innerHTML="🔇";
+    if(icon) icon.innerHTML="Start Music";
     if(text) text.innerHTML="Play Music";
     button.setAttribute("aria-label","Play Music");
     button.setAttribute("title","Play Music");
@@ -727,6 +716,45 @@
     }
   },false);
   setPlaying();
+})();
+</script>
+<script>
+(function(){
+  var music=document.getElementById('fluteMusic');
+  var button=document.getElementById('musicControl');
+  var playing=false;
+  function playMusic(){
+    if(!music)return;
+    try{
+      var p=music.play();
+      if(p&&p.then){p.then(function(){playing=true;}).catch(function(){});}
+      else{playing=true;}
+    }catch(e){}
+  }
+  function toggleMusic(){
+    if(!music)return;
+    if(playing || !music.paused){
+      try{music.pause();}catch(e){}
+      playing=false;
+    }else{playMusic();}
+    if(button){
+      button.innerHTML='Start Music';
+      button.setAttribute('aria-label','Start Music');
+      button.setAttribute('title','Start Music');
+    }
+  }
+  playMusic();
+  function firstGesture(){
+    if(!playing)playMusic();
+    document.removeEventListener('touchstart',firstGesture,false);
+    document.removeEventListener('click',firstGesture,false);
+  }
+  document.addEventListener('touchstart',firstGesture,false);
+  document.addEventListener('click',firstGesture,false);
+  if(button)button.onclick=function(e){
+    if(e){e.preventDefault();if(e.stopPropagation)e.stopPropagation();}
+    toggleMusic();
+  };
 })();
 </script>
 </body>
