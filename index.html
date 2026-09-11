@@ -89,12 +89,9 @@
     text-align:center;
     position:relative;
   }
-  .reveal{
-    opacity:0;
-    transform:translateY(28px);
-    transition:opacity 1s ease, transform 1s ease;
-  }
-  .reveal.in{opacity:1; transform:translateY(0);}
+  /* All invitation sections stay visible so the complete invitation can be scrolled on every device. */
+  .reveal{opacity:1; transform:none; transition:none;}
+  .reveal.in{opacity:1; transform:none;}
 
   .rule{
     display:flex; align-items:center; gap:14px;
@@ -671,7 +668,7 @@
   function setPlaying(){
     playing=true;
     if(icon) icon.innerHTML="🔊";
-    if(text) text.innerHTML="Start Music";
+    if(text) text.innerHTML="Stop Music";
     button.setAttribute("aria-label","Stop Music");
     button.setAttribute("title","Stop Music");
   }
